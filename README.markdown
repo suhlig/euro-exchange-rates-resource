@@ -1,6 +1,6 @@
 # Euro Exchange Rates Resource
 
-This is an example resource for the [concourse-resource-go](https://github.com/homeport/concourse-resource-go) interface.
+This is an example resource for the [concourse-resource-go](https://github.com/homeport/concourse-resource-go) interface. It fetches currency exchange rates from the European Central Bank via [Frankfurter](https://github.com/hakanensari/frankfurter).
 
 # Development
 
@@ -9,13 +9,13 @@ This is an example resource for the [concourse-resource-go](https://github.com/h
 Native:
 
 ```command
-$ jo -d . source.url=https://api.frankfurter.app/latest | go run . check
+$ jo -d . source.url=https://api.frankfurter.app | go run . check
 ```
 
 Docker:
 
 ```command
-jo -d . source.url=https://api.frankfurter.app/latest | docker run --rm -i euro-exchange-rates-resource /opt/resource/check
+jo -d . source.url=https://api.frankfurter.app | docker run --rm -i euro-exchange-rates-resource /opt/resource/check
 ```
 
 ## Get
@@ -23,14 +23,14 @@ jo -d . source.url=https://api.frankfurter.app/latest | docker run --rm -i euro-
 Native:
 
 ```command
-$ jo -d . source.url=https://api.frankfurter.app/latest 'params.currencies[]=EUR' version.date=2024-01-15 | go run . get /tmp
+$ jo -d . source.url=https://api.frankfurter.app 'params.currencies[]=EUR' version.date=2024-01-15 | go run . get /tmp
 ```
 
 Get what check discovered:
 
 ```command
-$ jo -d . source.url=https://api.frankfurter.app/latest 'params.currencies[]=EUR' version=$(
-  jo -d . source.url=https://api.frankfurter.app/latest | go run . check
+$ jo -d . source.url=https://api.frankfurter.app 'params.currencies[]=EUR' version=$(
+  jo -d . source.url=https://api.frankfurter.app | go run . check
 ) \
   | jq '.version=.version[0]' \
   | go run . get $(mktemp -d)
@@ -39,8 +39,8 @@ $ jo -d . source.url=https://api.frankfurter.app/latest 'params.currencies[]=EUR
 Docker:
 
 ```command
-$ jo -d . source.url=https://api.frankfurter.app/latest 'params.currencies[]=EUR' version=$(
-  jo -d . source.url=https://api.frankfurter.app/latest | docker run --rm -i euro-exchange-rates-resource /opt/resource/check
+$ jo -d . source.url=https://api.frankfurter.app 'params.currencies[]=SEK' 'params.currencies[]=USD' version=$(
+  jo -d . source.url=https://api.frankfurter.app | docker run --rm -i euro-exchange-rates-resource /opt/resource/check
 ) \
   | jq '.version=.version[0]' \
   | docker run --rm -i euro-exchange-rates-resource /opt/resource/in /tmp
