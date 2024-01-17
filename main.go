@@ -20,23 +20,26 @@ func main() {
 	}
 }
 
-// TODO The Resource type does not have any members. Do we really need it?
 type Resource[S Source, V Version, P Params] struct{}
 
 type Source struct {
-	URL string `json:"url"`
+	URL string `json:"url" validate:"required,http_url"`
 }
 
 type Version struct {
-	Date string `json:"date"`
+	Date string `json:"date" validate:"required,datetime=2006-01-02"`
 }
 
 type Params struct {
 	Currencies []string `json:"currencies"`
 }
 
-func (r Resource[S, V, P]) Check(ctx context.Context, request concourse.Request[Source], response *[]Version, log io.Writer) error {
-	fmt.Fprintf(log, "Fetching most recent exchange rates\n")
+func (r Resource[S, V, P]) Name() string {
+	return "Euro Exchange Rates"
+}
+
+func (r Resource[S, V, P]) Check(ctx context.Context, request concourse.CheckRequest[Source, Version], response *concourse.CheckResponse[Version], log io.Writer) error {
+	fmt.Fprintf(log, "Fetching most recent exchange rates since %s\n", request.Version)
 	rates, err := frankfurter.ExchangeRatesService{URL: request.Source.URL}.Latest()
 
 	if err != nil {
@@ -49,7 +52,7 @@ func (r Resource[S, V, P]) Check(ctx context.Context, request concourse.Request[
 }
 
 func (r Resource[S, V, P]) Get(ctx context.Context, request concourse.GetRequest[Source, Version, Params], response *concourse.Response[Version], log io.Writer, destination string) error {
-	fmt.Fprintf(log, "Fetching exchange rates for %s as of %s and placing them in %s\n", request.Params.Currencies, request.Version.Date, destination)
+	fmt.Fprintf(log, "Fetching exchange rates for %s as of %s and placing them in %s\n", request.Params.Currencies, request.Version, destination)
 
 	rates, err := frankfurter.ExchangeRatesService{URL: request.Source.URL}.At(request.Version.Date)
 
@@ -77,7 +80,10 @@ func (r Resource[S, V, P]) Get(ctx context.Context, request concourse.GetRequest
 	}
 
 	response.Version = Version{Date: request.Version.Date}
-	response.Metadata = append(response.Metadata, concourse.NameValuePair{Name: "currencies available", Value: fmt.Sprintf("%d", len(rates.Rates))})
+
+	for _, c := range currencies {
+		response.Metadata = append(response.Metadata, concourse.NameValuePair{Name: c, Value: fmt.Sprintf("%.3f", rates.Rates[c])})
+	}
 
 	return nil
 }
