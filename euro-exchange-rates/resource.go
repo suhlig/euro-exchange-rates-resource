@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"path"
 
@@ -12,7 +13,9 @@ import (
 	"golang.org/x/exp/maps"
 )
 
-type ConcourseResource[S Source, V Version, P Params] struct{}
+type ConcourseResource[S Source, V Version, P Params] struct {
+	HttpClient *http.Client
+}
 
 type Source struct {
 	URL string `json:"url" validate:"required,http_url"`
@@ -32,7 +35,13 @@ func (r ConcourseResource[S, V, P]) Name() string {
 
 func (r ConcourseResource[S, V, P]) Check(ctx context.Context, request concourse.CheckRequest[Source, Version], response *concourse.CheckResponse[Version], log io.Writer) error {
 	fmt.Fprintf(log, "Fetching most recent exchange rates since %s\n", request.Version)
-	rates, err := frankfurter.ExchangeRatesService{URL: request.Source.URL}.Latest()
+
+	// TODO if version is given, return $version..
+	// otherwise just the latest
+	rates, err := frankfurter.ExchangeRatesService{
+		URL:        request.Source.URL,
+		HttpClient: r.HttpClient,
+	}.Latest(ctx)
 
 	if err != nil {
 		return fmt.Errorf("unable to fetch rates from %s: %w", request.Source.URL, err)
@@ -46,7 +55,10 @@ func (r ConcourseResource[S, V, P]) Check(ctx context.Context, request concourse
 func (r ConcourseResource[S, V, P]) Get(ctx context.Context, request concourse.GetRequest[Source, Version, Params], response *concourse.Response[Version], log io.Writer, destination string) error {
 	fmt.Fprintf(log, "Fetching exchange rates for %s as of %s and placing them in %s\n", request.Params.Currencies, request.Version, destination)
 
-	rates, err := frankfurter.ExchangeRatesService{URL: request.Source.URL}.At(request.Version.Date)
+	rates, err := frankfurter.ExchangeRatesService{
+		URL:        request.Source.URL,
+		HttpClient: r.HttpClient,
+	}.At(ctx, request.Version.Date)
 
 	if err != nil {
 		return fmt.Errorf("unable to fetch rates as of %s from %s: %w", request.Version.Date, request.Source.URL, err)

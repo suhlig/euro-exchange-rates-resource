@@ -1,13 +1,15 @@
 package frankfurter
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/url"
 )
 
 type ExchangeRatesService struct {
-	URL string
+	HttpClient *http.Client
+	URL        string
 }
 
 type ExchangeRates struct {
@@ -17,18 +19,24 @@ type ExchangeRates struct {
 	Rates  map[string]float32
 }
 
-func (s ExchangeRatesService) Latest() (*ExchangeRates, error) {
-	return s.At("latest")
+func (s ExchangeRatesService) Latest(ctx context.Context) (*ExchangeRates, error) {
+	return s.At(ctx, "latest")
 }
 
-func (s ExchangeRatesService) At(date string) (*ExchangeRates, error) {
+func (s ExchangeRatesService) At(ctx context.Context, date string) (*ExchangeRates, error) {
 	path, err := url.JoinPath(s.URL, date)
 
 	if err != nil {
 		return nil, err
 	}
 
-	httpResponse, err := http.Get(path)
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, path, nil)
+
+	if err != nil {
+		return nil, err
+	}
+
+	httpResponse, err := s.HttpClient.Do(request)
 
 	if err != nil {
 		return nil, err
