@@ -13,24 +13,18 @@ import (
 
 var _ = Describe("Check", func() {
 	var (
-		err      error
-		server   *httptest.Server
-		resource concourse.Resource[xr.Source, xr.Version, xr.Params]
-		request  concourse.CheckRequest[xr.Source, xr.Version]
-		response concourse.CheckResponse[xr.Version]
+		err          error
+		server       *httptest.Server
+		resource     concourse.Resource[xr.Source, xr.Version, xr.Params]
+		request      concourse.CheckRequest[xr.Source, xr.Version]
+		response     concourse.CheckResponse[xr.Version]
+		responseBody string
 	)
 
 	BeforeEach(func() {
 		server = httptest.NewServer(
 			http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				fmt.Fprintln(w, `
-					{
-						"amount": 1.0,
-						"base": "EUR",
-						"date": "2024-01-16",
-						"rates": { "SEK": 11.3215, "USD": 1.0882 }
-					}
-				`)
+				fmt.Fprintln(w, responseBody)
 			}))
 
 		resource = xr.ConcourseResource[xr.Source, xr.Version, xr.Params]{
@@ -49,9 +43,17 @@ var _ = Describe("Check", func() {
 		err = resource.Check(ctx, request, &response, GinkgoWriter)
 	})
 
-	Context("happy day", func() {
+	Context("no version given", func() {
 		BeforeEach(func() {
 			request.Source.URL = server.URL
+			responseBody = `
+				{
+					"amount": 1.0,
+					"base": "EUR",
+					"date": "2024-01-16",
+					"rates": { "SEK": 11.3215, "USD": 1.0882 }
+				}
+			`
 		})
 
 		It("works", func() {

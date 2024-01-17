@@ -12,11 +12,23 @@ type ExchangeRatesService struct {
 	URL        string
 }
 
+type Rates map[Currency]float32
+type Currency string
+type YMD string
+
 type ExchangeRates struct {
-	Date   string
+	Date   YMD
 	Amount float32
-	Base   string
-	Rates  map[string]float32
+	Base   Currency
+	Rates  Rates
+}
+
+type History struct {
+	Amount float32
+	Base   Currency
+	Start  YMD `json:"start_date"`
+	End    YMD `json:"end_date"`
+	Rates  map[YMD]Rates
 }
 
 func (s ExchangeRatesService) Latest(ctx context.Context) (*ExchangeRates, error) {
@@ -24,13 +36,13 @@ func (s ExchangeRatesService) Latest(ctx context.Context) (*ExchangeRates, error
 }
 
 func (s ExchangeRatesService) At(ctx context.Context, date string) (*ExchangeRates, error) {
-	path, err := url.JoinPath(s.URL, date)
+	urlWithPath, err := url.JoinPath(s.URL, date)
 
 	if err != nil {
 		return nil, err
 	}
 
-	request, err := http.NewRequestWithContext(ctx, http.MethodGet, path, nil)
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, urlWithPath, nil)
 
 	if err != nil {
 		return nil, err
@@ -51,4 +63,34 @@ func (s ExchangeRatesService) At(ctx context.Context, date string) (*ExchangeRat
 	}
 
 	return &rates, nil
+}
+
+func (s ExchangeRatesService) Since(ctx context.Context, date string) (*History, error) {
+	urlWithPath, err := url.JoinPath(s.URL, date+"..")
+
+	if err != nil {
+		return nil, err
+	}
+
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, urlWithPath, nil)
+
+	if err != nil {
+		return nil, err
+	}
+
+	httpResponse, err := s.HttpClient.Do(request)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var history History
+
+	err = json.NewDecoder(httpResponse.Body).Decode(&history)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &history, nil
 }

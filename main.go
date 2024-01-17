@@ -1,6 +1,7 @@
 package main
 
 import (
+	"net/http"
 	"os"
 
 	"github.com/suhlig/concourse-resource-go"
@@ -12,7 +13,9 @@ func main() {
 		euroexchangerates.Source,
 		euroexchangerates.Version,
 		euroexchangerates.Params,
-	]{}
+	]{
+		HttpClient: http.DefaultClient,
+	}
 
 	if err := concourse.NewRootCommand(&resource).Execute(); err != nil {
 		os.Exit(1)
