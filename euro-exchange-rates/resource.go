@@ -54,7 +54,7 @@ func (r ConcourseResource[S, V, P]) Check(ctx context.Context, request concourse
 			return fmt.Errorf("unable to fetch rates since %s from %s: %w", request.Version, request.Source.URL, err)
 		}
 
-		for date, _ := range history.Rates {
+		for date := range history.Rates {
 			*response = append(*response, Version{Date: string(date)})
 		}
 
