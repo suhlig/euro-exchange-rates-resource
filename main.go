@@ -5,14 +5,14 @@ import (
 	"os"
 
 	"github.com/suhlig/concourse-resource-go"
-	euroexchangerates "github.com/suhlig/euro-exchange-rates-resource/euro-exchange-rates"
+	xr "github.com/suhlig/euro-exchange-rates-resource/euro-exchange-rates"
 )
 
 func main() {
-	resource := euroexchangerates.ConcourseResource[
-		euroexchangerates.Source,
-		euroexchangerates.Version,
-		euroexchangerates.Params,
+	resource := xr.ConcourseResource[
+		xr.Source,
+		xr.Version,
+		xr.Params,
 	]{
 		HttpClient: http.DefaultClient,
 	}
