@@ -21,10 +21,22 @@ type Resource[S any, V any, P any] interface {
 	// [Check]: https://concourse-ci.org/implementing-resource-types.html#resource-check
 	Check(ctx context.Context, request CheckRequest[S, V], response *CheckResponse[V], log io.Writer) error
 
-	// Get ... TODO
+	// Get is invoked to fetch the resource and place it in the given directory.
+	//
+	// If is given the configured source, exact version of the resource to fetch, and configured parameters. It is
+	// also passed the destination directory where the state of the resource is to be placed.
+	//
+	// The function must add the fetched version to the response, and may add metadata.
+	//
+	// [In]: https://concourse-ci.org/implementing-resource-types.html#resource-in
 	Get(ctx context.Context, request GetRequest[S, V, P], response *Response[V], log io.Writer, destination string) error
 
-	// Put ... TODO
+	// Put is invoked to store the resource as it is given in the passed directory.
+	//
+	// If is given the configured source and configured parameters. The function must add the resulting version
+	// to the response, and may add metadata.
+	//
+	// [Out]: https://concourse-ci.org/implementing-resource-types.html#resource-out
 	Put(ctx context.Context, request PutRequest[S, P], response *Response[V], log io.Writer, source string) error
 }
 
