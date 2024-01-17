@@ -1,9 +1,11 @@
-module github.com/homeport/euro-exchange-rates-resource
+module github.com/suhlig/euro-exchange-rates-resource
 
 go 1.21.5
 
+replace github.com/suhlig/concourse-resource-go => ../concourse-resource-go
+
 require (
-	github.com/homeport/concourse-resource-go v0.0.0-00010101000000-000000000000
+	github.com/suhlig/concourse-resource-go v0.0.0-00010101000000-000000000000
 	golang.org/x/exp v0.0.0-20240112132812-db7319d0e0e3
 )
 

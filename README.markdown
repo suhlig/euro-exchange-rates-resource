@@ -1,6 +1,6 @@
 # Euro Exchange Rates Resource
 
-This is an example resource for the [concourse-resource-go](https://github.com/homeport/concourse-resource-go) interface. It fetches currency exchange rates from the European Central Bank via [Frankfurter](https://github.com/hakanensari/frankfurter).
+This is an example resource for the [concourse-resource-go](https://github.com/suhlig/concourse-resource-go) interface. It fetches currency exchange rates from the European Central Bank via [Frankfurter](https://github.com/hakanensari/frankfurter).
 
 # Development
 

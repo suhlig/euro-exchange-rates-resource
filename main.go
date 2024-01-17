@@ -7,8 +7,8 @@ import (
 	"os"
 	"path"
 
-	"github.com/homeport/concourse-resource-go"
-	"github.com/homeport/euro-exchange-rates-resource/frankfurter"
+	"github.com/suhlig/concourse-resource-go"
+	"github.com/suhlig/euro-exchange-rates-resource/frankfurter"
 	"golang.org/x/exp/maps"
 )
 
