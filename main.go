@@ -9,15 +9,11 @@ import (
 )
 
 func main() {
-	resource := xr.ConcourseResource[
-		xr.Source,
-		xr.Version,
-		xr.Params,
-	]{
+	resource := xr.ConcourseResource[xr.Source, xr.Version, xr.Params]{
 		HttpClient: http.DefaultClient,
 	}
 
-	if err := concourse.NewRootCommand(&resource).Execute(); err != nil {
+	if err := concourse.NewRootCommand(&resource, "Euro Exchange Rates resource").Execute(); err != nil {
 		os.Exit(1)
 	}
 }

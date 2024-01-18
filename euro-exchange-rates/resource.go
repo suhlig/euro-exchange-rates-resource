@@ -30,10 +30,6 @@ type Params struct {
 	Currencies []string `json:"currencies"`
 }
 
-func (r ConcourseResource[S, V, P]) Name() string {
-	return "Euro Exchange Rates"
-}
-
 func (r ConcourseResource[S, V, P]) Check(ctx context.Context, request concourse.CheckRequest[Source, Version], response *concourse.CheckResponse[Version], log io.Writer) error {
 	service := frankfurter.ExchangeRatesService{URL: request.Source.URL, HttpClient: r.HttpClient}
 
