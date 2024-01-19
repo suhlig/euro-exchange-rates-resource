@@ -10,9 +10,6 @@ import (
 )
 
 type Resource[S any, V any, P any] interface {
-	// Name returns the human-readable name of the resource
-	Name() string
-
 	// Check is invoked to detect new versions of the resource.
 	//
 	// It is given the configured source and current version, and must append new versions to the response slice, in
@@ -71,24 +68,38 @@ type PutRequest[S any, P any] struct {
 type CheckResponse[V any] []V
 
 func (r CheckResponse[V]) Validate() error {
+	if len(r) == 0 {
+		return nil // no versions available is valid
+	}
+
 	validate := validator.New(validator.WithRequiredStructEnabled())
 
-	var validationErrors error
+	var validationErrors []error
 
 	for _, v := range r {
 		err := validate.Struct(v)
 
 		if err != nil {
-			validationErrors = errors.Join(validationErrors, err)
+			validationErrors = append(validationErrors, err)
 		}
 	}
 
-	return validationErrors
+	if len(validationErrors) == 0 {
+		return nil
+	}
+
+	var all error
+
+	for _, err := range validationErrors {
+		all = errors.Join(all, err)
+	}
+
+	return all
 }
 
 type Response[V any] struct {
 	Version  V               `json:"version" validate:"required"`
-	Metadata []NameValuePair `json:"metadata,omitempty"` // TODO optional, but if given, name must not be empty
+	Metadata []NameValuePair `json:"metadata" validate:"dive"`
 }
 
 func (r Response[V]) Validate() error {
@@ -96,6 +107,6 @@ func (r Response[V]) Validate() error {
 }
 
 type NameValuePair struct {
-	Name  string `json:"name"`
+	Name  string `json:"name" validate:"required"`
 	Value string `json:"value"`
 }

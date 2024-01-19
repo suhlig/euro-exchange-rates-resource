@@ -5,10 +5,10 @@ go 1.21.5
 replace github.com/suhlig/concourse-resource-go => ../concourse-resource-go
 
 require (
-	github.com/onsi/ginkgo/v2 v2.14.0
-	github.com/onsi/gomega v1.30.0
+	github.com/onsi/ginkgo/v2 v2.15.0
+	github.com/onsi/gomega v1.31.1
 	github.com/suhlig/concourse-resource-go v0.0.0-00010101000000-000000000000
-	golang.org/x/exp v0.0.0-20240112132812-db7319d0e0e3
+	golang.org/x/exp v0.0.0-20240119083558-1b970713d09a
 )
 
 require (

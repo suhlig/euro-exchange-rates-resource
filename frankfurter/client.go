@@ -14,7 +14,7 @@ type ExchangeRatesService struct {
 
 type Rates map[Currency]float32
 type Currency string
-type YMD string
+type YMD string // TODO change this to time.Time with custom (Un)Marshalers
 
 type ExchangeRates struct {
 	Date   YMD
@@ -31,10 +31,20 @@ type History struct {
 	Rates  map[YMD]Rates
 }
 
+// Latest fetches the latest rates
+//
+// TODO Reduce network traffic by passing currencies to retrieve.
+//
+// [API Documentation]: https://www.frankfurter.app/docs/#latest
 func (s ExchangeRatesService) Latest(ctx context.Context) (*ExchangeRates, error) {
 	return s.At(ctx, "latest")
 }
 
+// At fetches the rates at the given date
+//
+// TODO Reduce network traffic by passing currencies to retrieve.
+//
+// [API Documentation]: https://www.frankfurter.app/docs/#historical
 func (s ExchangeRatesService) At(ctx context.Context, date string) (*ExchangeRates, error) {
 	urlWithPath, err := url.JoinPath(s.URL, date)
 
@@ -65,6 +75,11 @@ func (s ExchangeRatesService) At(ctx context.Context, date string) (*ExchangeRat
 	return &rates, nil
 }
 
+// Since fetches the rates between the given date and now
+//
+// TODO Reduce network traffic by passing currencies to retrieve.
+//
+// [API Documentation]: https://www.frankfurter.app/docs/#timeseries
 func (s ExchangeRatesService) Since(ctx context.Context, date string) (*History, error) {
 	urlWithPath, err := url.JoinPath(s.URL, date+"..")
 

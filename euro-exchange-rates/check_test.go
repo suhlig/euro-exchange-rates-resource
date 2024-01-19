@@ -1,10 +1,6 @@
 package euroexchangerates_test
 
 import (
-	"fmt"
-	"net/http"
-	"net/http/httptest"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/suhlig/concourse-resource-go"
@@ -13,31 +9,10 @@ import (
 
 var _ = Describe("Check", func() {
 	var (
-		err          error
-		server       *httptest.Server
-		resource     concourse.Resource[xr.Source, xr.Version, xr.Params]
-		request      concourse.CheckRequest[xr.Source, xr.Version]
-		response     concourse.CheckResponse[xr.Version]
-		responseBody string
+		err      error
+		request  concourse.CheckRequest[xr.Source, xr.Version]
+		response concourse.CheckResponse[xr.Version]
 	)
-
-	BeforeEach(func() {
-		server = httptest.NewServer(
-			http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				fmt.Fprintln(w, responseBody)
-			}))
-
-		resource = xr.ConcourseResource[xr.Source, xr.Version, xr.Params]{
-			HttpClient: server.Client(),
-		}
-
-		request = concourse.CheckRequest[xr.Source, xr.Version]{}
-		response = concourse.CheckResponse[xr.Version]{}
-	})
-
-	AfterEach(func() {
-		server.Close()
-	})
 
 	JustBeforeEach(func(ctx SpecContext) {
 		err = resource.Check(ctx, request, &response, GinkgoWriter)

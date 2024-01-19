@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"sort"
+	"strconv"
 
 	"github.com/suhlig/concourse-resource-go"
 	"github.com/suhlig/euro-exchange-rates-resource/frankfurter"
@@ -55,7 +56,7 @@ func (r ConcourseResource[S, V, P]) Check(ctx context.Context, request concourse
 		}
 
 		// Cannot use sort.Sort(response) here because
-		// a) T comparable is not enough for sorting (needs to be cmp.Ordered), and
+		// a) [T comparable] is not enough for sorting (needs to be [T cmp.Ordered]), and
 		// b) implementing Less is not possible in a generic way because only certain built-in types satisfy https://pkg.go.dev/cmp@master#Ordered
 		sort.Slice(*response, func(i, j int) bool {
 			return (*response)[i].Date > (*response)[j].Date
@@ -95,13 +96,13 @@ func (r ConcourseResource[S, V, P]) Get(ctx context.Context, request concourse.G
 			continue
 		}
 
-		os.WriteFile(path.Join(destination, string(c)), []byte(fmt.Sprintf("%.3f", rate)), 0755)
+		os.WriteFile(path.Join(destination, string(c)), []byte(rateString(rate)), 0755)
 	}
 
 	response.Version = Version{Date: request.Version.Date}
 
 	for _, c := range currencies {
-		response.Metadata = append(response.Metadata, concourse.NameValuePair{Name: string(c), Value: fmt.Sprintf("%.3f", rates.Rates[c])})
+		response.Metadata = append(response.Metadata, concourse.NameValuePair{Name: string(c), Value: rateString(rates.Rates[c])})
 	}
 
 	return nil
@@ -121,4 +122,9 @@ func mapFunc[T, U any](ts []T, f func(T) U) []U {
 	}
 
 	return us
+}
+
+// https://stackoverflow.com/a/40555281
+func rateString(rate float32) string {
+	return strconv.FormatFloat(float64(rate), 'f', -1, 32)
 }

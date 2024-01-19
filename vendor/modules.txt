@@ -37,8 +37,8 @@ github.com/inconshreveable/mousetrap
 # github.com/leodido/go-urn v1.2.4
 ## explicit; go 1.16
 github.com/leodido/go-urn
-# github.com/onsi/ginkgo/v2 v2.14.0
-## explicit; go 1.18
+# github.com/onsi/ginkgo/v2 v2.15.0
+## explicit; go 1.20
 github.com/onsi/ginkgo/v2
 github.com/onsi/ginkgo/v2/config
 github.com/onsi/ginkgo/v2/formatter
@@ -59,8 +59,8 @@ github.com/onsi/ginkgo/v2/internal/parallel_support
 github.com/onsi/ginkgo/v2/internal/testingtproxy
 github.com/onsi/ginkgo/v2/reporters
 github.com/onsi/ginkgo/v2/types
-# github.com/onsi/gomega v1.30.0
-## explicit; go 1.18
+# github.com/onsi/gomega v1.31.1
+## explicit; go 1.20
 github.com/onsi/gomega
 github.com/onsi/gomega/format
 github.com/onsi/gomega/internal
@@ -83,7 +83,7 @@ github.com/suhlig/concourse-resource-go
 # golang.org/x/crypto v0.18.0
 ## explicit; go 1.18
 golang.org/x/crypto/sha3
-# golang.org/x/exp v0.0.0-20240112132812-db7319d0e0e3
+# golang.org/x/exp v0.0.0-20240119083558-1b970713d09a
 ## explicit; go 1.20
 golang.org/x/exp/maps
 # golang.org/x/net v0.20.0
