@@ -15,7 +15,7 @@ $ jo -d . source.url=https://api.frankfurter.app | go run . check
 Docker:
 
 ```command
-jo -d . source.url=https://api.frankfurter.app | docker run --rm -i euro-exchange-rates-resource /opt/resource/check
+$ jo -d . source.url=https://api.frankfurter.app | docker run --rm -i euro-exchange-rates-resource /opt/resource/check
 ```
 
 ## Get
@@ -23,13 +23,13 @@ jo -d . source.url=https://api.frankfurter.app | docker run --rm -i euro-exchang
 Native:
 
 ```command
-$ jo -d . source.url=https://api.frankfurter.app 'params.currencies[]=EUR' version.date=2024-01-15 | go run . get /tmp
+$ jo -d . source.url=https://api.frankfurter.app 'params.currencies[]=USD' version.date=2024-01-15 | go run . get /tmp
 ```
 
 Get what check discovered:
 
 ```command
-$ jo -d . source.url=https://api.frankfurter.app 'params.currencies[]=EUR' version=$(
+$ jo -d . source.url=https://api.frankfurter.app 'params.currencies[]=USD' version=$(
   jo -d . source.url=https://api.frankfurter.app | go run . check
 ) \
   | jq '.version=.version[0]' \
