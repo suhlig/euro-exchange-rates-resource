@@ -21,8 +21,7 @@ func CheckWithValidation[S any, V any, P any](ctx context.Context, resource Reso
 		return err
 	}
 
-	var response CheckResponse[V]
-	err = resource.Check(ctx, request, &response, stderr)
+	response, err := resource.Check(ctx, request, stderr)
 
 	if err != nil {
 		return fmt.Errorf("check failed: %w", err)
@@ -51,8 +50,7 @@ func GetWithValidation[S any, V any, P any](ctx context.Context, resource Resour
 		return err
 	}
 
-	var response Response[V]
-	err = resource.Get(ctx, request, &response, stderr, destination)
+	response, err := resource.Get(ctx, request, stderr, destination)
 
 	if err != nil {
 		return fmt.Errorf("get failed: %w", err)
@@ -82,9 +80,7 @@ func PutWithValidation[S any, V any, P any](ctx context.Context, resource Resour
 		return err
 	}
 
-	var response Response[V]
-
-	err = resource.Put(ctx, request, &response, stderr, source)
+	response, err := resource.Put(ctx, request, stderr, source)
 
 	if err != nil {
 		return fmt.Errorf("put failed: %w", err)

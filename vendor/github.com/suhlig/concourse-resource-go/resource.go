@@ -16,7 +16,7 @@ type Resource[S any, V any, P any] interface {
 	// chronological order (oldest first, including the requested version if it's still valid).
 	//
 	// [Check]: https://concourse-ci.org/implementing-resource-types.html#resource-check
-	Check(ctx context.Context, request CheckRequest[S, V], response *CheckResponse[V], log io.Writer) error
+	Check(ctx context.Context, request CheckRequest[S, V], log io.Writer) (CheckResponse[V], error)
 
 	// Get is invoked to fetch the resource and place it in the given directory.
 	//
@@ -26,7 +26,7 @@ type Resource[S any, V any, P any] interface {
 	// The function must add the fetched version to the response, and may add metadata.
 	//
 	// [In]: https://concourse-ci.org/implementing-resource-types.html#resource-in
-	Get(ctx context.Context, request GetRequest[S, V, P], response *Response[V], log io.Writer, destination string) error
+	Get(ctx context.Context, request GetRequest[S, V, P], log io.Writer, destination string) (*Response[V], error)
 
 	// Put is invoked to store the resource as it is given in the passed directory.
 	//
@@ -34,7 +34,7 @@ type Resource[S any, V any, P any] interface {
 	// to the response, and may add metadata.
 	//
 	// [Out]: https://concourse-ci.org/implementing-resource-types.html#resource-out
-	Put(ctx context.Context, request PutRequest[S, P], response *Response[V], log io.Writer, source string) error
+	Put(ctx context.Context, request PutRequest[S, P], log io.Writer, source string) (*Response[V], error)
 }
 
 type CheckRequest[S any, V any] struct {

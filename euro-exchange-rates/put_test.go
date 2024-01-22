@@ -11,15 +11,19 @@ var _ = Describe("Put", func() {
 	var (
 		err      error
 		request  concourse.PutRequest[xr.Source, xr.Params]
-		response concourse.Response[xr.Version]
+		response *concourse.Response[xr.Version]
 		inputDir string
 	)
 
 	JustBeforeEach(func(ctx SpecContext) {
-		err = resource.Put(ctx, request, &response, GinkgoWriter, inputDir)
+		response, err = resource.Put(ctx, request, GinkgoWriter, inputDir)
 	})
 
 	It("works", func() {
 		Expect(err).ToNot(HaveOccurred())
+	})
+
+	It("has a response", func() {
+		Expect(response).ToNot(BeNil())
 	})
 })

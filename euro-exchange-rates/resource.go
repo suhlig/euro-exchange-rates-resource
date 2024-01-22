@@ -31,7 +31,8 @@ type Params struct {
 	Currencies []string `json:"currencies"`
 }
 
-func (r ConcourseResource[S, V, P]) Check(ctx context.Context, request concourse.CheckRequest[Source, Version], response *concourse.CheckResponse[Version], log io.Writer) error {
+func (r ConcourseResource[S, V, P]) Check(ctx context.Context, request concourse.CheckRequest[Source, Version], log io.Writer) (concourse.CheckResponse[Version], error) {
+	var response concourse.CheckResponse[Version]
 	service := frankfurter.ExchangeRatesService{URL: request.Source.URL, HttpClient: r.HttpClient}
 
 	if request.Version.Date == "" {
@@ -39,34 +40,34 @@ func (r ConcourseResource[S, V, P]) Check(ctx context.Context, request concourse
 		rates, err := service.Latest(ctx)
 
 		if err != nil {
-			return fmt.Errorf("unable to fetch latest rate from %s: %w", request.Source.URL, err)
+			return nil, fmt.Errorf("unable to fetch latest rate from %s: %w", request.Source.URL, err)
 		}
 
-		*response = concourse.CheckResponse[Version]{Version{Date: string(rates.Date)}}
+		response = concourse.CheckResponse[Version]{Version{Date: string(rates.Date)}}
 	} else {
 		fmt.Fprintf(log, "Fetching exchange rates since %s\n", request.Version)
 		history, err := service.Since(ctx, request.Version.Date)
 
 		if err != nil {
-			return fmt.Errorf("unable to fetch rates since %s from %s: %w", request.Version, request.Source.URL, err)
+			return nil, fmt.Errorf("unable to fetch rates since %s from %s: %w", request.Version, request.Source.URL, err)
 		}
 
 		for date := range history.Rates {
-			*response = append(*response, Version{Date: string(date)})
+			response = append(response, Version{Date: string(date)})
 		}
 
 		// Cannot use sort.Sort(response) here because
 		// a) [T comparable] is not enough for sorting (needs to be [T cmp.Ordered]), and
 		// b) implementing Less is not possible in a generic way because only certain built-in types satisfy https://pkg.go.dev/cmp@master#Ordered
-		sort.Slice(*response, func(i, j int) bool {
-			return (*response)[i].Date > (*response)[j].Date
+		sort.Slice(response, func(i, j int) bool {
+			return (response)[i].Date > (response)[j].Date
 		})
 	}
 
-	return nil
+	return response, nil
 }
 
-func (r ConcourseResource[S, V, P]) Get(ctx context.Context, request concourse.GetRequest[Source, Version, Params], response *concourse.Response[Version], log io.Writer, destination string) error {
+func (r ConcourseResource[S, V, P]) Get(ctx context.Context, request concourse.GetRequest[Source, Version, Params], log io.Writer, destination string) (*concourse.Response[Version], error) {
 	fmt.Fprintf(log, "Fetching exchange rates for %s as of %s and placing them in %s\n", request.Params.Currencies, request.Version, destination)
 
 	rates, err := frankfurter.ExchangeRatesService{
@@ -75,7 +76,7 @@ func (r ConcourseResource[S, V, P]) Get(ctx context.Context, request concourse.G
 	}.At(ctx, request.Version.Date)
 
 	if err != nil {
-		return fmt.Errorf("unable to fetch rates as of %s from %s: %w", request.Version.Date, request.Source.URL, err)
+		return nil, fmt.Errorf("unable to fetch rates as of %s from %s: %w", request.Version.Date, request.Source.URL, err)
 	}
 
 	var currencies []frankfurter.Currency
@@ -99,18 +100,20 @@ func (r ConcourseResource[S, V, P]) Get(ctx context.Context, request concourse.G
 		os.WriteFile(path.Join(destination, string(c)), []byte(rateString(rate)), 0755)
 	}
 
-	response.Version = Version{Date: request.Version.Date}
+	response := concourse.Response[Version]{
+		Version: Version{Date: request.Version.Date},
+	}
 
 	for _, c := range currencies {
 		response.Metadata = append(response.Metadata, concourse.NameValuePair{Name: string(c), Value: rateString(rates.Rates[c])})
 	}
 
-	return nil
+	return &response, nil
 }
 
-func (r ConcourseResource[S, V, P]) Put(ctx context.Context, request concourse.PutRequest[Source, Params], response *concourse.Response[Version], log io.Writer, source string) error {
+func (r ConcourseResource[S, V, P]) Put(ctx context.Context, request concourse.PutRequest[Source, Params], log io.Writer, source string) (*concourse.Response[Version], error) {
 	fmt.Fprintf(log, "This resource does nothing on put\n")
-	return nil
+	return &concourse.Response[Version]{}, nil
 }
 
 // https://stackoverflow.com/a/71624929

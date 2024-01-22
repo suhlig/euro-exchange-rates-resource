@@ -15,7 +15,7 @@ var _ = Describe("Check", func() {
 	)
 
 	JustBeforeEach(func(ctx SpecContext) {
-		err = resource.Check(ctx, request, &response, GinkgoWriter)
+		response, err = resource.Check(ctx, request, GinkgoWriter)
 	})
 
 	Context("no version given", func() {

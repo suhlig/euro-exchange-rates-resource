@@ -20,11 +20,10 @@ var _ = Describe("Get", func() {
 
 	BeforeEach(func() {
 		inputDir = GinkgoT().TempDir()
-		response = &concourse.Response[xr.Version]{} // fresh response
 	})
 
 	JustBeforeEach(func(ctx SpecContext) {
-		err = resource.Get(ctx, request, response, GinkgoWriter, inputDir)
+		response, err = resource.Get(ctx, request, GinkgoWriter, inputDir)
 	})
 
 	Context("requested version exists", func() {
