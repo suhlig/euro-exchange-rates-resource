@@ -1,6 +1,8 @@
 package euroexchangerates_test
 
 import (
+	"time"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/suhlig/concourse-resource-go"
@@ -40,7 +42,14 @@ var _ = Describe("Check", func() {
 		})
 
 		It("has the expected version", func() {
-			Expect(response[0].Date).To(Equal("2024-01-16"))
+			frankfurt := time.FixedZone("Europe/Frankfurt", 60*60)
+
+			Expect(
+				time.Time(response[0].Date),
+			).To(BeTemporally(
+				"==",
+				time.Date(2024, 1, 16, 16, 0, 0, 0, frankfurt),
+				time.Minute))
 		})
 	})
 

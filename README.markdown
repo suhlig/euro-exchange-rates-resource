@@ -45,3 +45,7 @@ $ jo -d . source.url=https://api.frankfurter.app 'params.currencies[]=SEK' 'para
   | jq '.version=.version[0]' \
   | docker run --rm -i euro-exchange-rates-resource /opt/resource/in /tmp
 ```
+
+# TODO
+
+* `float32` is not ideal for money. Consider [shopspring/decimal](https://github.com/shopspring/decimal) or store everything in microcents.

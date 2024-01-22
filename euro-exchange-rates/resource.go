@@ -24,7 +24,7 @@ type Source struct {
 }
 
 type Version struct {
-	Date string `json:"date" validate:"required,datetime=2006-01-02"`
+	Date frankfurter.YMD `json:"date" validate:"required"`
 }
 
 type Params struct {
@@ -32,10 +32,11 @@ type Params struct {
 }
 
 func (r ConcourseResource[S, V, P]) Check(ctx context.Context, request concourse.CheckRequest[Source, Version], log io.Writer) (concourse.CheckResponse[Version], error) {
-	var response concourse.CheckResponse[Version]
 	service := frankfurter.ExchangeRatesService{URL: request.Source.URL, HttpClient: r.HttpClient}
 
-	if request.Version.Date == "" {
+	var response concourse.CheckResponse[Version]
+
+	if request.Version.Date.IsZero() {
 		fmt.Fprintf(log, "Fetching latest exchange rates\n")
 		rates, err := service.Latest(ctx)
 
@@ -43,7 +44,7 @@ func (r ConcourseResource[S, V, P]) Check(ctx context.Context, request concourse
 			return nil, fmt.Errorf("unable to fetch latest rate from %s: %w", request.Source.URL, err)
 		}
 
-		response = concourse.CheckResponse[Version]{Version{Date: string(rates.Date)}}
+		response = concourse.CheckResponse[Version]{Version{Date: rates.Date}}
 	} else {
 		fmt.Fprintf(log, "Fetching exchange rates since %s\n", request.Version)
 		history, err := service.Since(ctx, request.Version.Date)
@@ -53,14 +54,14 @@ func (r ConcourseResource[S, V, P]) Check(ctx context.Context, request concourse
 		}
 
 		for date := range history.Rates {
-			response = append(response, Version{Date: string(date)})
+			response = append(response, Version{Date: date})
 		}
 
 		// Cannot use sort.Sort(response) here because
 		// a) [T comparable] is not enough for sorting (needs to be [T cmp.Ordered]), and
 		// b) implementing Less is not possible in a generic way because only certain built-in types satisfy https://pkg.go.dev/cmp@master#Ordered
 		sort.Slice(response, func(i, j int) bool {
-			return (response)[i].Date > (response)[j].Date
+			return response[i].Date.After(response[j].Date)
 		})
 	}
 

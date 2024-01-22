@@ -7,37 +7,13 @@ import (
 	"net/url"
 )
 
-type ExchangeRatesService struct {
-	HttpClient *http.Client
-	URL        string
-}
-
-type Rates map[Currency]float32
-type Currency string
-type YMD string // TODO change this to time.Time with custom (Un)Marshalers
-
-type ExchangeRates struct {
-	Date   YMD
-	Amount float32
-	Base   Currency
-	Rates  Rates
-}
-
-type History struct {
-	Amount float32
-	Base   Currency
-	Start  YMD `json:"start_date"`
-	End    YMD `json:"end_date"`
-	Rates  map[YMD]Rates
-}
-
 // Latest fetches the latest rates
 //
 // TODO Reduce network traffic by passing currencies to retrieve.
 //
 // [API Documentation]: https://www.frankfurter.app/docs/#latest
 func (s ExchangeRatesService) Latest(ctx context.Context) (*ExchangeRates, error) {
-	return s.At(ctx, "latest")
+	return s.At(ctx, YMD{})
 }
 
 // At fetches the rates at the given date
@@ -45,8 +21,17 @@ func (s ExchangeRatesService) Latest(ctx context.Context) (*ExchangeRates, error
 // TODO Reduce network traffic by passing currencies to retrieve.
 //
 // [API Documentation]: https://www.frankfurter.app/docs/#historical
-func (s ExchangeRatesService) At(ctx context.Context, date string) (*ExchangeRates, error) {
-	urlWithPath, err := url.JoinPath(s.URL, date)
+func (s ExchangeRatesService) At(ctx context.Context, date YMD) (*ExchangeRates, error) {
+	var (
+		urlWithPath string
+		err         error
+	)
+
+	if date.IsZero() {
+		urlWithPath, err = url.JoinPath(s.URL, "latest")
+	} else {
+		urlWithPath, err = url.JoinPath(s.URL, date.String())
+	}
 
 	if err != nil {
 		return nil, err
@@ -80,8 +65,8 @@ func (s ExchangeRatesService) At(ctx context.Context, date string) (*ExchangeRat
 // TODO Reduce network traffic by passing currencies to retrieve.
 //
 // [API Documentation]: https://www.frankfurter.app/docs/#timeseries
-func (s ExchangeRatesService) Since(ctx context.Context, date string) (*History, error) {
-	urlWithPath, err := url.JoinPath(s.URL, date+"..")
+func (s ExchangeRatesService) Since(ctx context.Context, date YMD) (*History, error) {
+	urlWithPath, err := url.JoinPath(s.URL, date.String()+"..")
 
 	if err != nil {
 		return nil, err
