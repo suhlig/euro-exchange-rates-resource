@@ -20,7 +20,8 @@ type ConcourseResource[S Source, V Version, P Params] struct {
 }
 
 type Source struct {
-	URL string `json:"url" validate:"required,http_url"`
+	URL   string `json:"url" validate:"required,http_url"`
+	Debug bool
 }
 
 type Version struct {
@@ -32,6 +33,10 @@ type Params struct {
 }
 
 func (r ConcourseResource[S, V, P]) Check(ctx context.Context, request concourse.CheckRequest[Source, Version], log io.Writer) (concourse.CheckResponse[Version], error) {
+	if request.Source.Debug {
+		r.HttpClient.Transport = RequestResponseLogger{Writer: log}
+	}
+
 	service := frankfurter.ExchangeRatesService{URL: request.Source.URL, HttpClient: r.HttpClient}
 
 	var response concourse.CheckResponse[Version]
@@ -69,6 +74,10 @@ func (r ConcourseResource[S, V, P]) Check(ctx context.Context, request concourse
 }
 
 func (r ConcourseResource[S, V, P]) Get(ctx context.Context, request concourse.GetRequest[Source, Version, Params], log io.Writer, destination string) (*concourse.Response[Version], error) {
+	if request.Source.Debug {
+		r.HttpClient.Transport = RequestResponseLogger{Writer: log}
+	}
+
 	fmt.Fprintf(log, "Fetching exchange rates for %s as of %s and placing them in %s\n", request.Params.Currencies, request.Version, destination)
 
 	rates, err := frankfurter.ExchangeRatesService{
@@ -123,10 +132,26 @@ func mapFunc[T, U any](ts []T, f func(T) U) []U {
 
 	for i := range ts {
 		us[i] = f(ts[i])
+type RequestResponseLogger struct {
+	Writer io.Writer
+}
+
+func (t RequestResponseLogger) RoundTrip(req *http.Request) (*http.Response, error) {
+	if t.Writer != nil {
+		fmt.Fprintf(t.Writer, "--> %s %s\n", req.Method, req.URL)
 	}
 
 	return us
 }
+	resp, err := http.DefaultTransport.RoundTrip(req)
+
+	if err != nil {
+		return resp, err
+	}
+
+	if t.Writer != nil {
+		fmt.Fprintf(t.Writer, "<-- %d %s\n", resp.StatusCode, resp.Request.URL)
+	}
 
 // https://stackoverflow.com/a/40555281
 func rateString(rate float32) string {
