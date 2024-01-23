@@ -57,4 +57,5 @@ $ docker push suhligibm/euro-exchange-rates-resource:latest
 
 # TODO
 
+* Terminal and UI show opposing sorting - which one is right?
 * `float32` is not ideal for money. Consider [shopspring/decimal](https://github.com/shopspring/decimal) or store everything in microcents.

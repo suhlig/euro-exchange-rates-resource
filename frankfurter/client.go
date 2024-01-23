@@ -40,10 +40,9 @@ func (s ExchangeRatesService) At(ctx context.Context, date YMD, currencies ...Cu
 		return nil, err
 	}
 
-	query := url.Values{}
-	query.Add("to", strings.Join(mapFunc(currencies, func(c Currency) string { return string(c) }), ","))
-
-	if len(query) > 0 {
+	if len(currencies) > 0 {
+		query := url.Values{}
+		query.Add("to", strings.Join(mapFunc(currencies, func(c Currency) string { return string(c) }), ","))
 		urlWithPath = urlWithPath + "?" + query.Encode()
 	}
 

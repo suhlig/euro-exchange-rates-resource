@@ -153,7 +153,7 @@ func (t RequestResponseLogger) RoundTrip(req *http.Request) (*http.Response, err
 		return nil, err
 	}
 
-	return resp, err
+	return resp, nil
 }
 
 func dumpRequest(w io.Writer, req *http.Request) {
