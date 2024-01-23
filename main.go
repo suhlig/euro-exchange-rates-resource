@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"os"
 
+	_ "time/tzdata" // https://pkg.go.dev/time/tzdata#pkg-overview
+
 	"github.com/suhlig/concourse-resource-go"
 	xr "github.com/suhlig/euro-exchange-rates-resource/euro-exchange-rates"
 )
