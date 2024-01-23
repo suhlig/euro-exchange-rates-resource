@@ -8,6 +8,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/suhlig/concourse-resource-go"
 	xr "github.com/suhlig/euro-exchange-rates-resource/euro-exchange-rates"
+	"github.com/suhlig/euro-exchange-rates-resource/frankfurter"
 )
 
 var _ = Describe("Get", func() {
@@ -26,21 +27,70 @@ var _ = Describe("Get", func() {
 		response, err = resource.Get(ctx, request, GinkgoWriter, inputDir)
 	})
 
-	Context("requested version exists", func() {
+	Context("requested version does not exist", func() {
 		BeforeEach(func() {
 			request.Source.URL = server.URL
+
+			beforeEcbEvenExisted, e := frankfurter.NewYMD("1998-05-30")
+			Expect(e).ToNot(HaveOccurred())
+			request.Version = xr.Version{Date: beforeEcbEvenExisted}
+
 			responseBody = `
 				{
 					"amount": 1.0,
 					"base": "EUR",
-					"date": "2024-01-16",
+					"date": "2024-01-15",
 					"rates": { "SEK": 11.3215, "USD": 1.0882, "THB": 38.522 }
 				}
 			`
 		})
 
+		It("fails", func() {
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("has a useful error message", func() {
+			Expect(err).To(MatchError(ContainSubstring("not available")))
+		})
+	})
+
+	Context("requested version exists", func() {
+		BeforeEach(func() {
+			request.Source.URL = server.URL
+
+			midJanuary, e := frankfurter.NewYMD("2024-01-15")
+			Expect(e).ToNot(HaveOccurred())
+			request.Version = xr.Version{Date: midJanuary}
+
+			responseBody = `
+				{
+					"amount": 1.0,
+					"base": "EUR",
+					"date": "2024-01-15",
+					"rates": { "SEK": 11.3215, "USD": 1.0882, "THB": 38.522 }
+				}
+			`
+		})
+
+		Context("currencies configured", func() {
+			BeforeEach(func() {
+				request.Source.Currencies = []frankfurter.Currency{
+					frankfurter.Currency("FOO"),
+					frankfurter.Currency("BAR"),
+				}
+			})
+
+			It("has the expected request query", func() {
+				Expect(requestURL.Query().Get("to")).To(Equal("FOO,BAR"))
+			})
+		})
+
 		It("works", func() {
 			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("has the expected request path", func() {
+			Expect(requestURL.Path).To(Equal("/2024-01-15"))
 		})
 
 		Context("SEK currency requested", func() {

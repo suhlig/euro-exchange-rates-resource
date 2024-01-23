@@ -3,11 +3,6 @@ jobs:
   plan:
     - get: exchange-rates
       trigger: true
-      params:
-        currencies:
-          - AUD
-          - DKK
-          - USD
     - task: show-rates
       config:
         platform: linux
@@ -27,6 +22,11 @@ resources:
     type: euro-exchange-rates
     source:
       url: https://api.frankfurter.app
+      verbose: false
+      currencies:
+        - AUD
+        - DKK
+        - USD
     check_every: 24h
 resource_types:
   - name: euro-exchange-rates

@@ -98,6 +98,10 @@ func (d YMD) IsZero() bool {
 	return time.Time(d).IsZero()
 }
 
+func (d YMD) Equal(other YMD) bool {
+	return time.Time(d).Equal(time.Time(other))
+}
+
 func (d YMD) MarshalJSON() ([]byte, error) {
 	return []byte(strconv.Quote(d.String())), nil
 }

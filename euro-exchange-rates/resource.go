@@ -1,6 +1,7 @@
 package euroexchangerates
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -9,6 +10,7 @@ import (
 	"path"
 	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/suhlig/concourse-resource-go"
 	"github.com/suhlig/euro-exchange-rates-resource/frankfurter"
@@ -20,20 +22,23 @@ type ConcourseResource[S Source, V Version, P Params] struct {
 }
 
 type Source struct {
-	URL   string `json:"url" validate:"required,http_url"`
-	Debug bool
+	URL        string                 `json:"url" validate:"required,http_url"`
+	Currencies []frankfurter.Currency `json:"currencies"`
+	Verbose    bool
 }
 
 type Version struct {
 	Date frankfurter.YMD `json:"date" validate:"required"`
 }
 
-type Params struct {
-	Currencies []string `json:"currencies"`
+func (v Version) String() string {
+	return v.Date.String()
 }
 
+type Params struct{}
+
 func (r ConcourseResource[S, V, P]) Check(ctx context.Context, request concourse.CheckRequest[Source, Version], log io.Writer) (concourse.CheckResponse[Version], error) {
-	if request.Source.Debug {
+	if request.Source.Verbose {
 		r.HttpClient.Transport = RequestResponseLogger{Writer: log}
 	}
 
@@ -43,7 +48,7 @@ func (r ConcourseResource[S, V, P]) Check(ctx context.Context, request concourse
 
 	if request.Version.Date.IsZero() {
 		fmt.Fprintf(log, "Fetching latest exchange rates\n")
-		rates, err := service.Latest(ctx)
+		rates, err := service.Latest(ctx, request.Source.Currencies...)
 
 		if err != nil {
 			return nil, fmt.Errorf("unable to fetch latest rate from %s: %w", request.Source.URL, err)
@@ -52,7 +57,7 @@ func (r ConcourseResource[S, V, P]) Check(ctx context.Context, request concourse
 		response = concourse.CheckResponse[Version]{Version{Date: rates.Date}}
 	} else {
 		fmt.Fprintf(log, "Fetching exchange rates since %s\n", request.Version)
-		history, err := service.Since(ctx, request.Version.Date)
+		history, err := service.Since(ctx, request.Version.Date, request.Source.Currencies...)
 
 		if err != nil {
 			return nil, fmt.Errorf("unable to fetch rates since %s from %s: %w", request.Version, request.Source.URL, err)
@@ -74,32 +79,30 @@ func (r ConcourseResource[S, V, P]) Check(ctx context.Context, request concourse
 }
 
 func (r ConcourseResource[S, V, P]) Get(ctx context.Context, request concourse.GetRequest[Source, Version, Params], log io.Writer, destination string) (*concourse.Response[Version], error) {
-	if request.Source.Debug {
+	if request.Source.Verbose {
 		r.HttpClient.Transport = RequestResponseLogger{Writer: log}
 	}
 
-	fmt.Fprintf(log, "Fetching exchange rates for %s as of %s and placing them in %s\n", request.Params.Currencies, request.Version, destination)
+	if len(request.Source.Currencies) == 0 {
+		fmt.Fprintf(log, "Fetching all exchange rates as of %s and placing them in %s\n", request.Version, destination)
+	} else {
+		fmt.Fprintf(log, "Fetching exchange rates for %s as of %s and placing them in %s\n", request.Source.Currencies, request.Version, destination)
+	}
 
 	rates, err := frankfurter.ExchangeRatesService{
 		URL:        request.Source.URL,
 		HttpClient: r.HttpClient,
-	}.At(ctx, request.Version.Date)
+	}.At(ctx, request.Version.Date, request.Source.Currencies...)
 
 	if err != nil {
 		return nil, fmt.Errorf("unable to fetch rates as of %s from %s: %w", request.Version.Date, request.Source.URL, err)
 	}
 
-	var currencies []frankfurter.Currency
-
-	if len(request.Params.Currencies) == 0 {
-		currencies = maps.Keys(rates.Rates)
-	} else {
-		currencies = mapFunc(request.Params.Currencies, func(c string) frankfurter.Currency {
-			return frankfurter.Currency(c)
-		})
+	if !request.Version.Date.Equal(rates.Date) {
+		return nil, fmt.Errorf("requested version %s is not available; closest is %s", request.Version.Date, rates.Date)
 	}
 
-	for _, c := range currencies {
+	for c := range rates.Rates {
 		rate, found := rates.Rates[c]
 
 		if !found {
@@ -114,7 +117,7 @@ func (r ConcourseResource[S, V, P]) Get(ctx context.Context, request concourse.G
 		Version: Version{Date: request.Version.Date},
 	}
 
-	for _, c := range currencies {
+	for c := range rates.Rates {
 		response.Metadata = append(response.Metadata, concourse.NameValuePair{Name: string(c), Value: rateString(rates.Rates[c])})
 	}
 
@@ -126,34 +129,67 @@ func (r ConcourseResource[S, V, P]) Put(ctx context.Context, request concourse.P
 	return &concourse.Response[Version]{}, nil
 }
 
-// https://stackoverflow.com/a/71624929
-func mapFunc[T, U any](ts []T, f func(T) U) []U {
-	us := make([]U, len(ts))
+// https://stackoverflow.com/a/40555281
+func rateString(rate float32) string {
+	return strconv.FormatFloat(float64(rate), 'f', -1, 32)
+}
 
-	for i := range ts {
-		us[i] = f(ts[i])
 type RequestResponseLogger struct {
 	Writer io.Writer
 }
 
 func (t RequestResponseLogger) RoundTrip(req *http.Request) (*http.Response, error) {
-	if t.Writer != nil {
-		fmt.Fprintf(t.Writer, "--> %s %s\n", req.Method, req.URL)
-	}
+	dumpRequest(t.Writer, req)
 
-	return us
-}
 	resp, err := http.DefaultTransport.RoundTrip(req)
 
 	if err != nil {
-		return resp, err
+		return nil, err
 	}
 
-	if t.Writer != nil {
-		fmt.Fprintf(t.Writer, "<-- %d %s\n", resp.StatusCode, resp.Request.URL)
+	err = dumpResponse(t.Writer, resp)
+
+	if err != nil {
+		return nil, err
 	}
 
-// https://stackoverflow.com/a/40555281
-func rateString(rate float32) string {
-	return strconv.FormatFloat(float64(rate), 'f', -1, 32)
+	return resp, err
+}
+
+func dumpRequest(w io.Writer, req *http.Request) {
+	fmt.Fprintf(w, "> %s %s\n", req.Method, req.URL)
+
+	for k, v := range req.Header {
+		fmt.Fprintf(w, "> %s: %v\n", k, strings.Join(v, ", "))
+	}
+
+	// we don't send a body; no need to log it
+}
+
+func dumpResponse(w io.Writer, resp *http.Response) error {
+	var responseBody bytes.Buffer
+	_, err := responseBody.ReadFrom(resp.Body)
+
+	if err != nil {
+		return err
+	}
+
+	// preserve the body for downstream reading
+	resp.Body = io.NopCloser(bytes.NewReader(responseBody.Bytes()))
+
+	fmt.Fprintf(w, "< %d\n", resp.StatusCode)
+
+	for k, v := range resp.Header {
+		fmt.Fprintf(w, "< %s: %v\n", k, strings.Join(v, ", "))
+	}
+
+	_, err = io.Copy(w, &responseBody)
+
+	if err != nil {
+		return err
+	}
+
+	fmt.Fprintln(w)
+
+	return nil
 }

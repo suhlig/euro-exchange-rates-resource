@@ -9,13 +9,13 @@ This is an example resource for the [concourse-resource-go](https://github.com/s
 Native:
 
 ```command
-$ jo -d . source.url=https://api.frankfurter.app | go run . check
+$ jo -d . source.verbose=true source.url=https://api.frankfurter.app | go run . check
 ```
 
 Docker:
 
 ```command
-$ jo -d . source.url=https://api.frankfurter.app | docker run --rm -i euro-exchange-rates-resource /opt/resource/check
+$ jo -d . source.verbose=true source.url=https://api.frankfurter.app | docker run --rm -i euro-exchange-rates-resource /opt/resource/check
 ```
 
 ## Get
@@ -23,14 +23,14 @@ $ jo -d . source.url=https://api.frankfurter.app | docker run --rm -i euro-excha
 Native:
 
 ```command
-$ jo -d . source.url=https://api.frankfurter.app 'params.currencies[]=USD' version.date=2024-01-15 | go run . get /tmp
+$ jo -d . source.verbose=true source.url=https://api.frankfurter.app 'source.currencies[]=SEK' 'source.currencies[]=USD' version.date=2024-01-15 | go run . get $(mktemp -d)
 ```
 
 Get what check discovered:
 
 ```command
-$ jo -d . source.url=https://api.frankfurter.app 'params.currencies[]=USD' version=$(
-  jo -d . source.url=https://api.frankfurter.app | go run . check
+$ jo -d . source.verbose=true source.url=https://api.frankfurter.app 'source.currencies[]=SEK' 'source.currencies[]=USD' version=$(
+  jo -d . source.verbose=true source.url=https://api.frankfurter.app 'source.currencies[]=SEK' 'source.currencies[]=USD' | go run . check
 ) \
   | jq '.version=.version[0]' \
   | go run . get $(mktemp -d)
@@ -39,8 +39,8 @@ $ jo -d . source.url=https://api.frankfurter.app 'params.currencies[]=USD' versi
 Docker:
 
 ```command
-$ jo -d . source.url=https://api.frankfurter.app 'params.currencies[]=SEK' 'params.currencies[]=USD' version=$(
-  jo -d . source.url=https://api.frankfurter.app | docker run --rm -i euro-exchange-rates-resource /opt/resource/check
+$ jo -d . source.verbose=true source.url=https://api.frankfurter.app 'source.currencies[]=SEK' 'source.currencies[]=USD' version=$(
+  jo -d . source.verbose=true source.url=https://api.frankfurter.app 'source.currencies[]=SEK' 'source.currencies[]=USD' | docker run --rm -i euro-exchange-rates-resource /opt/resource/check
 ) \
   | jq '.version=.version[0]' \
   | docker run --rm -i euro-exchange-rates-resource /opt/resource/in /tmp

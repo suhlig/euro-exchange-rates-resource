@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -21,11 +22,13 @@ var (
 	server       *httptest.Server
 	resource     concourse.Resource[xr.Source, xr.Version, xr.Params]
 	responseBody string
+	requestURL   *url.URL
 )
 
 var _ = BeforeEach(func() {
 	server = httptest.NewServer(
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			requestURL = r.URL
 			fmt.Fprintln(w, responseBody)
 		}))
 
