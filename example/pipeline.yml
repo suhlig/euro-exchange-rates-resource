@@ -1,0 +1,36 @@
+jobs:
+- name: show-exchange-rates
+  plan:
+    - get: exchange-rates
+      trigger: true
+      params:
+        currencies:
+          - AUD
+          - DKK
+          - USD
+    - task: show-rates
+      config:
+        platform: linux
+        image_resource:
+          type: registry-image
+          source: { repository: alpine }
+        inputs:
+          - name: exchange-rates
+        run:
+          path: sh
+          args:
+          - -c
+          - |
+            find exchange-rates -type f -exec sh -c "echo {}; cat {}; echo" \;
+resources:
+  - name: exchange-rates
+    type: euro-exchange-rates
+    source:
+      url: https://api.frankfurter.app
+    check_every: 24h
+resource_types:
+  - name: euro-exchange-rates
+    type: registry-image
+    source:
+      repository: suhligibm/euro-exchange-rates-resource
+      tag: latest
