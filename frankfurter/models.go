@@ -13,18 +13,6 @@ type ExchangeRatesService struct {
 	URL        string
 }
 
-type Rates map[Currency]float32
-type Currency string
-
-// YMD specializes time.Time encoded as YYYY-MM-DD
-// The time zone is hard-coded to Europe/Berlin, which is the same as Frankfurt.
-// The time is hard-coded to 16:00 because this is what the ECB specifies:
-//
-// "The reference rates are usually updated at around 16:00 CET every working day, except on TARGET closing days."
-//
-// from https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html
-type YMD time.Time
-
 type ExchangeRates struct {
 	Date   YMD
 	Amount float32
@@ -40,7 +28,9 @@ type History struct {
 	Rates  RatesAt `json:"rates"`
 }
 
+type Rates map[Currency]float32
 type RatesAt map[YMD]Rates
+type Currency string
 
 // UnmarshalJSON provides custom unmarshaling as we cannot naiively unmarshal a map with time.Time keys.
 func (ra *RatesAt) UnmarshalJSON(raw []byte) error {
@@ -68,6 +58,15 @@ func (ra *RatesAt) UnmarshalJSON(raw []byte) error {
 
 	return nil
 }
+
+// YMD specializes time.Time encoded as YYYY-MM-DD
+// The time zone is hard-coded to Europe/Berlin, which is the same as Frankfurt.
+// The time is hard-coded to 16:00 because this is what the ECB specifies:
+//
+// "The reference rates are usually updated at around 16:00 CET every working day, except on TARGET closing days."
+//
+// from https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html
+type YMD time.Time
 
 func NewYMD(s string) (YMD, error) {
 	frankfurt, err := time.LoadLocation("Europe/Berlin")

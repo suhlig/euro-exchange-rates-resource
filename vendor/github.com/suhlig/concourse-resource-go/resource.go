@@ -12,7 +12,7 @@ import (
 type Resource[S any, V any, P any] interface {
 	// Check is invoked to detect new versions of the resource.
 	//
-	// It is given the configured source and current version, and must append new versions to the response slice, in
+	// It is given the configured source and current version, and must return new versions as response, in
 	// chronological order (oldest first, including the requested version if it's still valid).
 	//
 	// [Check]: https://concourse-ci.org/implementing-resource-types.html#resource-check
@@ -23,15 +23,15 @@ type Resource[S any, V any, P any] interface {
 	// If is given the configured source, exact version of the resource to fetch, and configured parameters. It is
 	// also passed the destination directory where the state of the resource is to be placed.
 	//
-	// The function must add the fetched version to the response, and may add metadata.
+	// The function must return a response that describes the fetched version, and may add metadata.
 	//
 	// [In]: https://concourse-ci.org/implementing-resource-types.html#resource-in
 	Get(ctx context.Context, request GetRequest[S, V, P], log io.Writer, destination string) (*Response[V], error)
 
 	// Put is invoked to store the resource as it is given in the passed directory.
 	//
-	// If is given the configured source and configured parameters. The function must add the resulting version
-	// to the response, and may add metadata.
+	// If is given the configured source and configured parameters. The function must a response that describes the
+	// resulting version, and may add metadata.
 	//
 	// [Out]: https://concourse-ci.org/implementing-resource-types.html#resource-out
 	Put(ctx context.Context, request PutRequest[S, P], log io.Writer, source string) (*Response[V], error)
