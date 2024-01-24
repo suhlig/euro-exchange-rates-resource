@@ -18,7 +18,8 @@ func (s ExchangeRatesService) Latest(ctx context.Context) (*ExchangeRates, error
 
 // At fetches the rates at the given date
 //
-// TODO Reduce network traffic by passing currencies to retrieve.
+// If one or more currencies are passed, only those will be fetched.
+// If none are passed, _all_ currencies will be fetched.
 //
 // [API Documentation]: https://www.frankfurter.app/docs/#historical
 func (s ExchangeRatesService) At(ctx context.Context, date YMD) (*ExchangeRates, error) {

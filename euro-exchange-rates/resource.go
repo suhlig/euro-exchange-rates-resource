@@ -61,7 +61,7 @@ func (r ConcourseResource[S, V, P]) Check(ctx context.Context, request concourse
 		// a) [T comparable] is not enough for sorting (needs to be [T cmp.Ordered]), and
 		// b) implementing Less is not possible in a generic way because only certain built-in types satisfy https://pkg.go.dev/cmp@master#Ordered
 		sort.Slice(response, func(i, j int) bool {
-			return response[i].Date.After(response[j].Date)
+			return response[i].Date.Before(response[j].Date)
 		})
 	}
 

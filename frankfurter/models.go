@@ -90,8 +90,8 @@ func (d YMD) String() string {
 	return time.Time(d).Format(time.DateOnly)
 }
 
-func (d YMD) After(u YMD) bool {
-	return time.Time(d).After(time.Time(u))
+func (d YMD) Before(u YMD) bool {
+	return time.Time(d).Before(time.Time(u))
 }
 
 func (d YMD) IsZero() bool {
