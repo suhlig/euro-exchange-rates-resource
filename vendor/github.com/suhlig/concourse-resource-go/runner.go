@@ -18,7 +18,7 @@ func CheckWithValidation[S any, V any, P any](ctx context.Context, resource Reso
 	err = request.Validate()
 
 	if err != nil {
-		return err
+		return fmt.Errorf("validation of check request failed: %w", err)
 	}
 
 	response, err := resource.Check(ctx, request, stderr)
@@ -30,7 +30,7 @@ func CheckWithValidation[S any, V any, P any](ctx context.Context, resource Reso
 	err = response.Validate()
 
 	if err != nil {
-		return err
+		return fmt.Errorf("validation of check response failed: %w", err)
 	}
 
 	return json.NewEncoder(stdout).Encode(response)
@@ -47,7 +47,7 @@ func GetWithValidation[S any, V any, P any](ctx context.Context, resource Resour
 	err = request.Validate()
 
 	if err != nil {
-		return err
+		return fmt.Errorf("validation of get request failed: %w", err)
 	}
 
 	response, err := resource.Get(ctx, request, stderr, destination)
@@ -59,7 +59,7 @@ func GetWithValidation[S any, V any, P any](ctx context.Context, resource Resour
 	err = response.Validate()
 
 	if err != nil {
-		return err
+		return fmt.Errorf("validation of get response failed: %w", err)
 	}
 
 	return json.NewEncoder(stdout).Encode(response)
@@ -77,7 +77,7 @@ func PutWithValidation[S any, V any, P any](ctx context.Context, resource Resour
 	err = request.Validate()
 
 	if err != nil {
-		return err
+		return fmt.Errorf("validation of put request failed: %w", err)
 	}
 
 	response, err := resource.Put(ctx, request, stderr, source)
@@ -89,7 +89,7 @@ func PutWithValidation[S any, V any, P any](ctx context.Context, resource Resour
 	err = response.Validate()
 
 	if err != nil {
-		return err
+		return fmt.Errorf("validation of put response failed: %w", err)
 	}
 
 	return json.NewEncoder(stdout).Encode(response)
