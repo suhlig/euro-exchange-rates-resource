@@ -75,13 +75,13 @@ var _ = Describe("Get", func() {
 		Context("currencies configured", func() {
 			BeforeEach(func() {
 				request.Source.Currencies = []frankfurter.Currency{
-					frankfurter.Currency("FOO"),
-					frankfurter.Currency("BAR"),
+					frankfurter.Currency("SEK"),
+					frankfurter.Currency("THB"),
 				}
 			})
 
 			It("has the expected request query", func() {
-				Expect(requestURL.Query().Get("to")).To(Equal("FOO,BAR"))
+				Expect(requestURL.Query().Get("to")).To(Equal("SEK,THB"))
 			})
 		})
 

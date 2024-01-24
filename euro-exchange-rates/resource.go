@@ -14,7 +14,6 @@ import (
 
 	"github.com/suhlig/concourse-resource-go"
 	"github.com/suhlig/euro-exchange-rates-resource/frankfurter"
-	"golang.org/x/exp/maps"
 )
 
 type ConcourseResource[S Source, V Version, P Params] struct {
@@ -102,15 +101,16 @@ func (r ConcourseResource[S, V, P]) Get(ctx context.Context, request concourse.G
 		return nil, fmt.Errorf("requested version %s is not available; closest is %s", request.Version.Date, rates.Date)
 	}
 
-	for c := range rates.Rates {
-		rate, found := rates.Rates[c]
+	for _, c := range request.Source.Currencies {
+		_, found := rates.Rates[c]
 
 		if !found {
-			fmt.Fprintf(log, "Warning: requested currency %s is not part of the response. Available curencies are: %v\n", c, maps.Keys(rates.Rates))
-			continue
+			return nil, fmt.Errorf("currency %s is not avaiable", c)
 		}
+	}
 
-		os.WriteFile(path.Join(destination, string(c)), []byte(rateString(rate)), 0755)
+	for currency, rate := range rates.Rates {
+		os.WriteFile(path.Join(destination, string(currency)), []byte(rateString(rate)), 0755)
 	}
 
 	response := concourse.Response[Version]{
