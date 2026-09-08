@@ -46,7 +46,7 @@ func (r ConcourseResource[S, V, P]) Check(ctx context.Context, request concourse
 	var response concourse.CheckResponse[Version]
 
 	if request.Version.Date.IsZero() {
-		fmt.Fprintf(log, "Fetching latest exchange rates\n")
+		_, _ = fmt.Fprintf(log, "Fetching latest exchange rates\n")
 		rates, err := service.Latest(ctx, request.Source.Currencies...)
 
 		if err != nil {
@@ -55,7 +55,7 @@ func (r ConcourseResource[S, V, P]) Check(ctx context.Context, request concourse
 
 		response = concourse.CheckResponse[Version]{Version{Date: rates.Date}}
 	} else {
-		fmt.Fprintf(log, "Fetching exchange rates since %s\n", request.Version)
+		_, _ = fmt.Fprintf(log, "Fetching exchange rates since %s\n", request.Version)
 		history, err := service.Since(ctx, request.Version.Date, request.Source.Currencies...)
 
 		if err != nil {
@@ -83,9 +83,9 @@ func (r ConcourseResource[S, V, P]) Get(ctx context.Context, request concourse.G
 	}
 
 	if len(request.Source.Currencies) == 0 {
-		fmt.Fprintf(log, "Fetching all exchange rates as of %s and placing them in %s\n", request.Version, destination)
+		_, _ = fmt.Fprintf(log, "Fetching all exchange rates as of %s and placing them in %s\n", request.Version, destination)
 	} else {
-		fmt.Fprintf(log, "Fetching exchange rates for %s as of %s and placing them in %s\n", request.Source.Currencies, request.Version, destination)
+		_, _ = fmt.Fprintf(log, "Fetching exchange rates for %s as of %s and placing them in %s\n", request.Source.Currencies, request.Version, destination)
 	}
 
 	rates, err := frankfurter.ExchangeRatesService{
@@ -110,7 +110,11 @@ func (r ConcourseResource[S, V, P]) Get(ctx context.Context, request concourse.G
 	}
 
 	for currency, rate := range rates.Rates {
-		os.WriteFile(path.Join(destination, string(currency)), []byte(rateString(rate)), 0755)
+		err = os.WriteFile(path.Join(destination, string(currency)), []byte(rateString(rate)), 0o600)
+
+		if err != nil {
+			return nil, fmt.Errorf("unable to write exchange rate for %s: %w", currency, err)
+		}
 	}
 
 	response := concourse.Response[Version]{
@@ -125,7 +129,7 @@ func (r ConcourseResource[S, V, P]) Get(ctx context.Context, request concourse.G
 }
 
 func (r ConcourseResource[S, V, P]) Put(ctx context.Context, request concourse.PutRequest[Source, Params], log io.Writer, source string) (*concourse.Response[Version], error) {
-	fmt.Fprintf(log, "This resource does nothing on put\n")
+	_, _ = fmt.Fprintf(log, "This resource does nothing on put\n")
 	return &concourse.Response[Version]{}, nil
 }
 
@@ -157,10 +161,10 @@ func (t RequestResponseLogger) RoundTrip(req *http.Request) (*http.Response, err
 }
 
 func dumpRequest(w io.Writer, req *http.Request) {
-	fmt.Fprintf(w, "> %s %s\n", req.Method, req.URL)
+	_, _ = fmt.Fprintf(w, "> %s %s\n", req.Method, req.URL)
 
 	for k, v := range req.Header {
-		fmt.Fprintf(w, "> %s: %v\n", k, strings.Join(v, ", "))
+		_, _ = fmt.Fprintf(w, "> %s: %v\n", k, strings.Join(v, ", "))
 	}
 
 	// we don't send a body; no need to log it
@@ -177,10 +181,10 @@ func dumpResponse(w io.Writer, resp *http.Response) error {
 	// preserve the body for downstream reading
 	resp.Body = io.NopCloser(bytes.NewReader(responseBody.Bytes()))
 
-	fmt.Fprintf(w, "< %d\n", resp.StatusCode)
+	_, _ = fmt.Fprintf(w, "< %d\n", resp.StatusCode)
 
 	for k, v := range resp.Header {
-		fmt.Fprintf(w, "< %s: %v\n", k, strings.Join(v, ", "))
+		_, _ = fmt.Fprintf(w, "< %s: %v\n", k, strings.Join(v, ", "))
 	}
 
 	_, err = io.Copy(w, &responseBody)
@@ -189,7 +193,7 @@ func dumpResponse(w io.Writer, resp *http.Response) error {
 		return err
 	}
 
-	fmt.Fprintln(w)
+	_, _ = fmt.Fprintln(w)
 
 	return nil
 }

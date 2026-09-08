@@ -20,7 +20,7 @@ func TestEuroExchangeRates(t *testing.T) {
 
 var (
 	server       *httptest.Server
-	resource     concourse.Resource[xr.Source, xr.Version, xr.Params]
+	resource     concourse.Resource[xr.Source, xr.Version, xr.Params, xr.Params]
 	responseBody string
 	requestURL   *url.URL
 )
@@ -29,7 +29,7 @@ var _ = BeforeEach(func() {
 	server = httptest.NewServer(
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			requestURL = r.URL
-			fmt.Fprintln(w, responseBody)
+			_, _ = fmt.Fprintln(w, responseBody)
 		}))
 
 	resource = xr.ConcourseResource[xr.Source, xr.Version, xr.Params]{
