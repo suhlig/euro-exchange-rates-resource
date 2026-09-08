@@ -45,16 +45,3 @@ $ jo -d . source.verbose=true source.url=https://api.frankfurter.app 'source.cur
   | jq '.version=.version[0]' \
   | docker run --rm -i euro-exchange-rates-resource /opt/resource/in /tmp
 ```
-
-# Build
-
-Until we have CI:
-
-```command
-$ DOCKER_DEFAULT_PLATFORM=linux/amd64 docker build . -t suhligibm/euro-exchange-rates-resource
-$ docker push suhligibm/euro-exchange-rates-resource:latest
-```
-
-# TODO
-
-* `float32` is not ideal for money. Consider [shopspring/decimal](https://github.com/shopspring/decimal) or store everything in microcents.

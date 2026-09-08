@@ -9,7 +9,6 @@ import (
 	"os"
 	"path"
 	"sort"
-	"strconv"
 	"strings"
 
 	"github.com/suhlig/concourse-resource-go"
@@ -110,7 +109,7 @@ func (r ConcourseResource[S, V, P]) Get(ctx context.Context, request concourse.G
 	}
 
 	for currency, rate := range rates.Rates {
-		err = os.WriteFile(path.Join(destination, string(currency)), []byte(rateString(rate)), 0o600)
+		err = os.WriteFile(path.Join(destination, string(currency)), []byte(rate.String()), 0o600)
 
 		if err != nil {
 			return nil, fmt.Errorf("unable to write exchange rate for %s: %w", currency, err)
@@ -122,7 +121,7 @@ func (r ConcourseResource[S, V, P]) Get(ctx context.Context, request concourse.G
 	}
 
 	for c := range rates.Rates {
-		response.Metadata = append(response.Metadata, concourse.NameValuePair{Name: string(c), Value: rateString(rates.Rates[c])})
+		response.Metadata = append(response.Metadata, concourse.NameValuePair{Name: string(c), Value: rates.Rates[c].String()})
 	}
 
 	return &response, nil
@@ -131,11 +130,6 @@ func (r ConcourseResource[S, V, P]) Get(ctx context.Context, request concourse.G
 func (r ConcourseResource[S, V, P]) Put(ctx context.Context, request concourse.PutRequest[Source, Params], log io.Writer, source string) (*concourse.Response[Version], error) {
 	_, _ = fmt.Fprintf(log, "This resource does nothing on put\n")
 	return &concourse.Response[Version]{}, nil
-}
-
-// https://stackoverflow.com/a/40555281
-func rateString(rate float32) string {
-	return strconv.FormatFloat(float64(rate), 'f', -1, 32)
 }
 
 type RequestResponseLogger struct {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -15,22 +16,115 @@ type ExchangeRatesService struct {
 
 type ExchangeRates struct {
 	Date   YMD
-	Amount float32
+	Amount Micros
 	Base   Currency
 	Rates  Rates
 }
 
 type History struct {
-	Amount float32
+	Amount Micros
 	Base   Currency
 	Start  YMD     `json:"start_date"`
 	End    YMD     `json:"end_date"`
 	Rates  RatesAt `json:"rates"`
 }
 
-type Rates map[Currency]float32
+type Rates map[Currency]Micros
 type RatesAt map[YMD]Rates
 type Currency string
+
+// MicrosPerUnit is the number of micros per currency unit.
+const MicrosPerUnit = 1_000_000
+
+// Micros stores an exchange rate as an integer number of micros
+// (1/1,000,000 of a currency unit) instead of a floating point number.
+type Micros int64
+
+// String formats the rate as a decimal with trailing zeros removed,
+// e.g. 11_321_500 micros becomes "11.3215".
+func (m Micros) String() string {
+	negative := m < 0
+
+	if negative {
+		m = -m
+	}
+
+	whole := m / MicrosPerUnit
+	fraction := m % MicrosPerUnit
+
+	if fraction == 0 {
+		return strconv.FormatInt(int64(whole), 10)
+	}
+
+	fractionStr := strings.TrimRight(fmt.Sprintf("%06d", int64(fraction)), "0")
+	result := strconv.FormatInt(int64(whole), 10) + "." + fractionStr
+
+	if negative {
+		result = "-" + result
+	}
+
+	return result
+}
+
+// UnmarshalJSON converts a decimal rate, e.g. "11.3215", to micros by
+// rounding to the nearest integer micro. It does so without intermediate
+// floating point arithmetic so that the conversion is exact.
+func (m *Micros) UnmarshalJSON(data []byte) error {
+	raw := string(data)
+
+	negative := false
+
+	if strings.HasPrefix(raw, "-") {
+		negative = true
+		raw = raw[1:]
+	}
+
+	if strings.ContainsAny(raw, "eE") {
+		return fmt.Errorf("unable to parse %q as micros: scientific notation is not supported", data)
+	}
+
+	whole, fraction, _ := strings.Cut(raw, ".")
+
+	digits := whole + fraction
+
+	if len(digits) == 0 {
+		return fmt.Errorf("unable to parse %q as micros", data)
+	}
+
+	for _, digit := range digits {
+		if digit < '0' || digit > '9' {
+			return fmt.Errorf("unable to parse %q as micros", data)
+		}
+	}
+
+	// Round to the nearest micro, i.e. keep up to 6 fractional digits.
+	roundUp := len(fraction) > 6 && fraction[6] >= '5'
+
+	if len(fraction) > 6 {
+		fraction = fraction[:6]
+	}
+
+	// Pad the fractional part to exactly 6 digits.
+	fraction += strings.Repeat("0", max(0, 6-len(fraction)))
+
+	value, err := strconv.ParseInt(whole+fraction, 10, 64)
+
+	if err != nil {
+		return fmt.Errorf("unable to parse %q as micros: %w", data, err)
+	}
+
+	if roundUp {
+		value++
+	}
+
+	if negative {
+		value = -value
+	}
+
+	*m = Micros(value)
+
+	return nil
+}
 
 // UnmarshalJSON provides custom unmarshaling as we cannot naiively unmarshal a map with time.Time keys.
 func (ra *RatesAt) UnmarshalJSON(raw []byte) error {
