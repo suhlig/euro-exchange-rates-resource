@@ -2,7 +2,7 @@ module github.com/suhlig/euro-exchange-rates-resource
 
 go 1.27
 
-toolchain go1.27.0
+toolchain go1.27.1
 
 require (
 	github.com/onsi/ginkgo/v2 v2.32.1
