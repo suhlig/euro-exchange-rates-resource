@@ -72,7 +72,7 @@ jobs:
 
       - name: Build and push image tagged latest
         if: github.ref == 'refs/heads/main'
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           push: true
@@ -80,7 +80,7 @@ jobs:
 
       - name: Build and push image tagged with the git tag
         if: github.ref_type == 'tag'
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           push: true
