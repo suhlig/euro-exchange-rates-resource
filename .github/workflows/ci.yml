@@ -38,7 +38,7 @@ jobs:
           git diff --exit-code -- go.mod go.sum
 
       - name: golangci-lint
-        run: go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.13.1 run ./...
+        run: go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.14.0 run ./...
 
       - name: ginkgo run
         run: go tool ginkgo run -r
