@@ -33,7 +33,8 @@ func (s ExchangeRatesService) At(ctx context.Context, date YMD, currencies ...Cu
 	if date.IsZero() {
 		urlWithPath, err = url.JoinPath(s.URL, "latest")
 	} else {
-		urlWithPath, err = url.JoinPath(s.URL, date.String())
+		// Escape the date so url.JoinPath cannot interpret it as a path traversal
+		urlWithPath, err = url.JoinPath(s.URL, url.PathEscape(date.String()))
 	}
 
 	if err != nil {
@@ -75,7 +76,8 @@ func (s ExchangeRatesService) At(ctx context.Context, date YMD, currencies ...Cu
 //
 // [API Documentation]: https://www.frankfurter.app/docs/#timeseries
 func (s ExchangeRatesService) Since(ctx context.Context, date YMD, currencies ...Currency) (*History, error) {
-	urlWithPath, err := url.JoinPath(s.URL, date.String()+"..")
+	// Escape the date so url.JoinPath cannot interpret it as a path traversal
+	urlWithPath, err := url.JoinPath(s.URL, url.PathEscape(date.String()+".."))
 
 	if err != nil {
 		return nil, err
